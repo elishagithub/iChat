@@ -1,7 +1,13 @@
+import 'dart:ui';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ichat/constants.dart';
+
+import '../my_app_theme.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -9,19 +15,74 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            // Trigger the phone number authentication flow
-            _startPhoneNumberVerification(context);
-          },
-          child: const Text('Login with Phone Number'),
+        body: Stack(
+      children: [
+        SizedBox(
+          height: double.infinity,
+          width: double.infinity,
+          child: Image.asset(
+            Constants.backgroundImage,
+            fit: BoxFit.fill,
+          ),
         ),
-      ),
-    );
+        SafeArea(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const Expanded(
+                  flex: 1,
+                  child: Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Icon(
+                        Icons.arrow_back_ios,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )),
+              Expanded(flex: 2, child: Container()),
+              const Expanded(
+                  flex: 1,
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 20),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text("Hi",
+                          style: TextStyle(
+                              fontSize: 32,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  )),
+              Expanded(
+                  flex: 8,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Center(
+                      child: ClipRect(
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(12)),
+                                color: Colors.grey.shade200.withOpacity(0.25)),
+                            child: Center(
+                              child: Text(
+                                'Frosted',
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ))
+            ],
+          ),
+        )
+      ],
+    ));
   }
 
   Future<void> _startPhoneNumberVerification(BuildContext context) async {

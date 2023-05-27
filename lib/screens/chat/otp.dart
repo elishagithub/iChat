@@ -1,15 +1,20 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class OTPVerificationPage extends StatelessWidget {
+import '../../providers.dart';
+
+class OTPVerificationPage extends ConsumerWidget {
   final String verificationId;
 
   const OTPVerificationPage({Key? key, required this.verificationId})
       : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    bool isLoading = ref.watch(loadingProvider);
+
     final TextEditingController otpController = TextEditingController();
 
     return Scaffold(
@@ -33,9 +38,16 @@ class OTPVerificationPage extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 // Perform OTP verification and login logic
-                _verifyOTP(context, otpController.text.trim());
+                _verifyOTP(context, otpController.text.trim(), ref);
               },
-              child: const Text('Verify OTP'),
+              child: isLoading
+                  ? const SizedBox(
+                      height: 32,
+                      width: 32,
+                      child: CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white)))
+                  : const Text('Verify OTP'),
             ),
           ],
         ),
@@ -43,17 +55,21 @@ class OTPVerificationPage extends StatelessWidget {
     );
   }
 
-  Future<void> _verifyOTP(BuildContext context, String otp) async {
+  Future<void> _verifyOTP(
+      BuildContext context, String otp, WidgetRef ref) async {
     try {
       final credential = PhoneAuthProvider.credential(
         verificationId: verificationId,
         smsCode: otp,
       );
 
+      ref.read(loadingProvider.notifier).state = true;
+
       // Sign in with the credential
       await FirebaseAuth.instance
           .signInWithCredential(credential)
           .then((value) {
+        ref.read(loadingProvider.notifier).state = false;
         // Verification successful, navigate to the home page or perform any desired actions
         // ignore: use_build_context_synchronously
         context.go('/');

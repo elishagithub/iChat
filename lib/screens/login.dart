@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ichat/common/snacker.dart';
 
-final networkProvider = StateProvider<bool>((ref) {
-  return true;
+final loadingProvider = StateProvider<bool>((ref) {
+  return false;
 });
 
-// ignore: must_be_immutable
 class LoginPage extends ConsumerWidget {
   LoginPage({Key? key}) : super(key: key);
 
@@ -18,6 +18,8 @@ class LoginPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    bool isLoading = ref.watch(loadingProvider);
+
     return Scaffold(
         body: Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -37,17 +39,26 @@ class LoginPage extends ConsumerWidget {
             onPressed: () async {
               final phoneNumber = phoneNumberController.text.trim();
               if (phoneNumber.isNotEmpty) {
-                await _verifyPhoneNumber(context, phoneNumber);
+                await verifyPhoneNumber(context, phoneNumber, ref);
               }
             },
-            child: const Text("Login")),
+            child: isLoading
+                ? const SizedBox(
+                    height: 32,
+                    width: 32,
+                    child: CircularProgressIndicator(
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Colors.white)))
+                : const Text("Login")),
       ],
     ));
   }
 
-  Future<void> _verifyPhoneNumber(
-      BuildContext context, String phoneNumber) async {
+  Future<void> verifyPhoneNumber(
+      BuildContext context, String phoneNumber, WidgetRef ref) async {
     final FirebaseAuth auth = FirebaseAuth.instance;
+
+    ref.read(loadingProvider.notifier).state = true;
 
     await auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
@@ -56,12 +67,15 @@ class LoginPage extends ConsumerWidget {
         // Sign the user in with the credential here (e.g., _auth.signInWithCredential(credential))
       },
       verificationFailed: (FirebaseAuthException e) {
+        Snacker.showSnack(context, e.message.toString());
+
         // Handle verification failure
         if (kDebugMode) {
           print('Verification failed: ${e.message}');
         }
       },
       codeSent: (String verificationId, int? resendToken) {
+        ref.read(loadingProvider.notifier).state = false;
         // Navigate to the OTP verification page and pass the verification ID
         context.go('/otp_verification?verificationId=$verificationId');
       },

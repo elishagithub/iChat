@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class OTPVerificationPage extends StatelessWidget {
   final String verificationId;
@@ -9,7 +10,7 @@ class OTPVerificationPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TextEditingController _otpController = TextEditingController();
+    final TextEditingController otpController = TextEditingController();
 
     return Scaffold(
       appBar: AppBar(
@@ -22,7 +23,7 @@ class OTPVerificationPage extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: TextField(
-                controller: _otpController,
+                controller: otpController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                   labelText: 'Enter OTP',
@@ -32,7 +33,7 @@ class OTPVerificationPage extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 // Perform OTP verification and login logic
-                _verifyOTP(context, _otpController.text.trim());
+                _verifyOTP(context, otpController.text.trim());
               },
               child: const Text('Verify OTP'),
             ),
@@ -50,10 +51,13 @@ class OTPVerificationPage extends StatelessWidget {
       );
 
       // Sign in with the credential
-      await FirebaseAuth.instance.signInWithCredential(credential);
-
-      // Verification successful, navigate to the home page or perform any desired actions
-      Navigator.of(context).pushReplacementNamed('/');
+      await FirebaseAuth.instance
+          .signInWithCredential(credential)
+          .then((value) {
+        // Verification successful, navigate to the home page or perform any desired actions
+        // ignore: use_build_context_synchronously
+        context.go('/');
+      });
     } catch (e) {
       // Handle verification failure
       showDialog(

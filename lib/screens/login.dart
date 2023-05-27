@@ -1,122 +1,48 @@
-import 'dart:ui';
-
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ichat/constants.dart';
 
-import '../my_app_theme.dart';
+final networkProvider = StateProvider<bool>((ref) {
+  return true;
+});
 
-class LoginPage extends StatelessWidget {
-  const LoginPage({Key? key}) : super(key: key);
+// ignore: must_be_immutable
+class LoginPage extends ConsumerWidget {
+  LoginPage({Key? key}) : super(key: key);
+
+  final TextEditingController phoneNumberController = TextEditingController();
+
+  bool resentCode = false;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-        body: Stack(
+        body: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(
-          height: double.infinity,
-          width: double.infinity,
-          child: Image.asset(
-            Constants.backgroundImage,
-            fit: BoxFit.fill,
+        TextField(
+          controller: phoneNumberController,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(
+            labelText: 'Enter Phone Number',
           ),
         ),
-        SafeArea(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              const Expanded(
-                  flex: 1,
-                  child: Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Icon(
-                        Icons.arrow_back_ios,
-                        color: Colors.white,
-                      ),
-                    ),
-                  )),
-              Expanded(flex: 2, child: Container()),
-              const Expanded(
-                  flex: 1,
-                  child: Padding(
-                    padding: EdgeInsets.only(left: 20),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text("Hi",
-                          style: TextStyle(
-                              fontSize: 32,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
-                    ),
-                  )),
-              Expanded(
-                  flex: 8,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Center(
-                      child: ClipRect(
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                          child: Container(
-                            decoration: BoxDecoration(
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(12)),
-                                color: Colors.grey.shade200.withOpacity(0.25)),
-                            child: Center(
-                              child: Text(
-                                'Frosted',
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ))
-            ],
-          ),
-        )
+        const SizedBox(
+          height: 16,
+        ),
+        ElevatedButton(
+            onPressed: () async {
+              final phoneNumber = phoneNumberController.text.trim();
+              if (phoneNumber.isNotEmpty) {
+                await _verifyPhoneNumber(context, phoneNumber);
+              }
+            },
+            child: const Text("Login")),
       ],
     ));
-  }
-
-  Future<void> _startPhoneNumberVerification(BuildContext context) async {
-    final TextEditingController phoneNumberController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Enter Phone Number'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: phoneNumberController,
-                keyboardType: TextInputType.phone,
-              ),
-            ],
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () async {
-                // Validate and submit the phone number for verification
-                final phoneNumber = phoneNumberController.text.trim();
-                if (phoneNumber.isNotEmpty) {
-                  await _verifyPhoneNumber(context, phoneNumber);
-                }
-              },
-              child: const Text('Verify'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   Future<void> _verifyPhoneNumber(

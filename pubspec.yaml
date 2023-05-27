@@ -46,6 +46,8 @@ dependencies:
   connectivity:
   numeric_keyboard:
   cached_network_image:
+  country_flags: ^2.0.0
+  intl_phone_field: ^3.1.0
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ichat/dummypage.dart';
 import 'package:ichat/screens/chat/otp.dart';
 import 'package:ichat/screens/home.dart';
 import 'package:ichat/screens/login.dart';
@@ -20,12 +21,12 @@ class MyAppRouter {
           if (user != null) {
             // User is logged in, navigate to the home page
             return const MaterialPage<void>(
-              child: HomePage(),
+              child: DummyPage(),
             );
           } else {
             // User is not logged in, navigate to the login page
-            return MaterialPage<void>(
-              child: LoginPage(),
+            return const MaterialPage<void>(
+              child: DummyPage(),
             );
           }
         },

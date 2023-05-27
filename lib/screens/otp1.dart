@@ -150,12 +150,14 @@ class LoginPage extends StatelessWidget {
                                 child: appleButton(),
                               ),
 
+
                               // Continue with Phone
                               Padding(
                                 padding: const EdgeInsets.only(
                                     left: 16.0, right: 16.0),
                                 child: phoneButton(),
                               ),
+
                             ],
                           ),
                         ),
@@ -247,10 +249,8 @@ ElevatedButton facebookButton() {
     ),
     child: const Row(
       children: [
-        Icon(
-          Icons.facebook,
-          size: 32,
-        ),
+        Icon(Icons.facebook,
+        size: 32,),
         Expanded(
           child: Text(
             'Continue with Facebook',
@@ -280,10 +280,8 @@ ElevatedButton appleButton() {
     ),
     child: const Row(
       children: [
-        Icon(
-          Icons.apple,
-          size: 32,
-        ),
+        Icon(Icons.apple,
+        size: 32,),
         Expanded(
           child: Text(
             'Continue with Apple',

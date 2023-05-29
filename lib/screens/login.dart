@@ -5,19 +5,35 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ichat/common/snacker.dart';
 
+import '../common/country_dialog.dart';
+import '../common/phonefield/countries.dart';
+import '../models/country.dart';
+
 final loadingProvider = StateProvider<bool>((ref) {
   return false;
 });
 
-class LoginPage extends ConsumerWidget {
+class LoginPage extends ConsumerStatefulWidget {
   LoginPage({Key? key}) : super(key: key);
 
+  @override
+  ConsumerState<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends ConsumerState<LoginPage> {
   final TextEditingController phoneNumberController = TextEditingController();
+
+  String _selectedCountryCode = "";
+
+  final List<Country> _countries = countriesMap
+      .map((countryData) => Country(
+          name: countryData['name'], code: countryData['dial_code'].toString()))
+      .toList();
 
   bool resentCode = false;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     bool isLoading = ref.watch(loadingProvider);
 
     return Scaffold(
@@ -25,6 +41,31 @@ class LoginPage extends ConsumerWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        Expanded(
+          child: InkWell(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (_) => CountryDialog(
+                  countries: _countries,
+                  onCountrySelected: (country) {
+                    setState(() {
+                      _selectedCountryCode = country.code!;
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+              );
+            },
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                labelText: "ISD Code",
+                border: OutlineInputBorder(),
+              ),
+              child: Text(_selectedCountryCode),
+            ),
+          ),
+        ),
         TextField(
           controller: phoneNumberController,
           keyboardType: TextInputType.phone,

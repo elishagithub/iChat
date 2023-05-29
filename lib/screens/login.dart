@@ -1,127 +1,105 @@
-import 'dart:ui';
-
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:ichat/constants.dart';
+import 'package:ichat/common/snacker.dart';
 
-import '../my_app_theme.dart';
+import '../common/country_dialog.dart';
+import '../common/phonefield/countries.dart';
+import '../models/country.dart';
 
-class LoginPage extends StatelessWidget {
-  const LoginPage({Key? key}) : super(key: key);
+final loadingProvider = StateProvider<bool>((ref) {
+  return false;
+});
+
+class LoginPage extends ConsumerStatefulWidget {
+  LoginPage({Key? key}) : super(key: key);
+
+  @override
+  ConsumerState<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends ConsumerState<LoginPage> {
+  final TextEditingController phoneNumberController = TextEditingController();
+
+  String _selectedCountryCode = "";
+
+  final List<Country> _countries = countriesMap
+      .map((countryData) => Country(
+          name: countryData['name'], code: countryData['dial_code'].toString()))
+      .toList();
+
+  bool resentCode = false;
 
   @override
   Widget build(BuildContext context) {
+    bool isLoading = ref.watch(loadingProvider);
+
     return Scaffold(
-        body: Stack(
+        body: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(
-          height: double.infinity,
-          width: double.infinity,
-          child: Image.asset(
-            Constants.backgroundImage,
-            fit: BoxFit.fill,
+        Expanded(
+          child: InkWell(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (_) => CountryDialog(
+                  countries: _countries,
+                  onCountrySelected: (country) {
+                    setState(() {
+                      _selectedCountryCode = country.code!;
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+              );
+            },
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                labelText: "ISD Code",
+                border: OutlineInputBorder(),
+              ),
+              child: Text(_selectedCountryCode),
+            ),
           ),
         ),
-        SafeArea(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              const Expanded(
-                  flex: 1,
-                  child: Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Icon(
-                        Icons.arrow_back_ios,
-                        color: Colors.white,
-                      ),
-                    ),
-                  )),
-              Expanded(flex: 2, child: Container()),
-              const Expanded(
-                  flex: 1,
-                  child: Padding(
-                    padding: EdgeInsets.only(left: 20),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text("Hi",
-                          style: TextStyle(
-                              fontSize: 32,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
-                    ),
-                  )),
-              Expanded(
-                  flex: 8,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Center(
-                      child: ClipRect(
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                          child: Container(
-                            decoration: BoxDecoration(
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(12)),
-                                color: Colors.grey.shade200.withOpacity(0.25)),
-                            child: Center(
-                              child: Text(
-                                'Frosted',
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ))
-            ],
+        TextField(
+          controller: phoneNumberController,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(
+            labelText: 'Enter Phone Number',
           ),
-        )
+        ),
+        const SizedBox(
+          height: 16,
+        ),
+        ElevatedButton(
+            onPressed: () async {
+              final phoneNumber = phoneNumberController.text.trim();
+              if (phoneNumber.isNotEmpty) {
+                await verifyPhoneNumber(context, phoneNumber, ref);
+              }
+            },
+            child: isLoading
+                ? const SizedBox(
+                    height: 32,
+                    width: 32,
+                    child: CircularProgressIndicator(
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Colors.white)))
+                : const Text("Login")),
       ],
     ));
   }
 
-  Future<void> _startPhoneNumberVerification(BuildContext context) async {
-    final TextEditingController phoneNumberController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Enter Phone Number'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: phoneNumberController,
-                keyboardType: TextInputType.phone,
-              ),
-            ],
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () async {
-                // Validate and submit the phone number for verification
-                final phoneNumber = phoneNumberController.text.trim();
-                if (phoneNumber.isNotEmpty) {
-                  await _verifyPhoneNumber(context, phoneNumber);
-                }
-              },
-              child: const Text('Verify'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _verifyPhoneNumber(
-      BuildContext context, String phoneNumber) async {
+  Future<void> verifyPhoneNumber(
+      BuildContext context, String phoneNumber, WidgetRef ref) async {
     final FirebaseAuth auth = FirebaseAuth.instance;
+
+    ref.read(loadingProvider.notifier).state = true;
 
     await auth.verifyPhoneNumber(
       phoneNumber: phoneNumber,
@@ -130,12 +108,15 @@ class LoginPage extends StatelessWidget {
         // Sign the user in with the credential here (e.g., _auth.signInWithCredential(credential))
       },
       verificationFailed: (FirebaseAuthException e) {
+        Snacker.showSnack(context, e.message.toString());
+
         // Handle verification failure
         if (kDebugMode) {
           print('Verification failed: ${e.message}');
         }
       },
       codeSent: (String verificationId, int? resendToken) {
+        ref.read(loadingProvider.notifier).state = false;
         // Navigate to the OTP verification page and pass the verification ID
         context.go('/otp_verification?verificationId=$verificationId');
       },
